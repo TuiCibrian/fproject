@@ -14,7 +14,7 @@ public class Main extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/fproject/vista/inicio.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 600, 400);
 
-        stage.setTitle("Titulo Ventana");
+        stage.setTitle("Pokémon Card-Jitsu");
         stage.setMaximized(true);
         stage.setScene(scene);
         stage.show();
