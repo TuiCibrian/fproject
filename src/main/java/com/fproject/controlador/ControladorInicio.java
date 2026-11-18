@@ -1,7 +1,10 @@
-package com.fproject.modelo;
+package com.fproject.controlador;
 
 import java.util.ArrayList;
 
+import com.fproject.modelo.Carta;
+import com.fproject.modelo.EstadoJuego;
+import com.fproject.modelo.ReglasJuego;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

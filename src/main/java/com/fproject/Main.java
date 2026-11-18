@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 //HOLA SOY CIBRIAN MAÑANA (14-NOV) VOY A INTENTAR TERMINAR LA PRACTICA 9 Y YA LE METO MANO AQUÍ SORRY
+//HOLA SOY AXEL, YO VOY A CHAMBEAR HOY (17-NOV)
 
 public class Main extends Application {
 
