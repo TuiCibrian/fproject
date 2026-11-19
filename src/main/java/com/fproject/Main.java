@@ -12,8 +12,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/fproject/vista/inicio.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 600, 400);
+        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/fproject/vista/IniciarSesion.fxml"));
+        Scene scene = new Scene(fxmlLoader.load());
 
         stage.setTitle("Pokémon Card-Jitsu");
         stage.setMaximized(true);
