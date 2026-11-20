@@ -1,16 +1,24 @@
 package com.fproject.controlador;
 
 import java.util.ArrayList;
+import java.util.Date;
 
+import com.fproject.datos.General;
+import com.fproject.datos.ManejadorDB4O;
 import com.fproject.modelo.Carta;
 import com.fproject.modelo.EstadoJuego;
+import com.fproject.modelo.HistorialPartida;
+import com.fproject.modelo.JugadorPerfil;
 import com.fproject.modelo.ReglasJuego;
+import com.fproject.modelo.ReglasPuntos;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+
+import static com.fproject.datos.General.Cambiar;
 
 public class ControladorInicio {
     @FXML
@@ -45,9 +53,16 @@ public class ControladorInicio {
     private int indiceCartaJugador1 = -1;
     private int indiceCartaJugador2 = -1;
     private boolean partidaTerminada;
+    private boolean partidaRegistrada;
 
     @FXML
     public void initialize() {
+        JugadorPerfil jugador = General.getJugadorActual();
+
+        if (jugador != null) {
+            txtJugador1.setText(jugador.getNombreUsuario());
+        }
+
         lblEstado.setText("Escribe los nombres y presiona Iniciar partida.");
     }
 
@@ -60,11 +75,18 @@ public class ControladorInicio {
 
         nombreJugador1 = txtJugador1.getText().trim();
         nombreJugador2 = txtJugador2.getText().trim();
+
+        if (nombreJugador1.equalsIgnoreCase(nombreJugador2)) {
+            lblEstado.setText("Los nombres de los jugadores deben ser diferentes.");
+            return;
+        }
+
         estado = reglas.iniciarPartida();
         turnoSeleccion = 1;
         indiceCartaJugador1 = -1;
         indiceCartaJugador2 = -1;
         partidaTerminada = false;
+        partidaRegistrada = false;
 
         txtJugador1.setDisable(true);
         txtJugador2.setDisable(true);
@@ -159,6 +181,53 @@ public class ControladorInicio {
         btnIniciar.setDisable(false);
         btnIniciar.setText("Nueva partida");
         mostrarManos();
+        registrarResultado(ganador);
+    }
+
+    private void registrarResultado(String ganador) {
+        if (partidaRegistrada) {
+            return;
+        }
+        partidaRegistrada = true;
+
+        try {
+            ManejadorDB4O db = ManejadorDB4O.getInstancia();
+            JugadorPerfil jugador1 = db.buscarJugador(nombreJugador1);
+            JugadorPerfil jugador2 = db.buscarJugador(nombreJugador2);
+
+            if (ganador.equals("Empate")) {
+                if (jugador1 != null) {
+                    ReglasPuntos.registrarEmpate(jugador1);
+                    db.guardarJugador(jugador1);
+                }
+                if (jugador2 != null) {
+                    ReglasPuntos.registrarEmpate(jugador2);
+                    db.guardarJugador(jugador2);
+                }
+            } else {
+                JugadorPerfil perfilGanador = ganador.equals(nombreJugador1) ? jugador1 : jugador2;
+                JugadorPerfil perfilPerdedor = ganador.equals(nombreJugador1) ? jugador2 : jugador1;
+
+                if (perfilGanador != null) {
+                    ReglasPuntos.registrarVictoria(perfilGanador);
+                    db.guardarJugador(perfilGanador);
+                }
+                if (perfilPerdedor != null) {
+                    ReglasPuntos.registrarDerrota(perfilPerdedor);
+                    db.guardarJugador(perfilPerdedor);
+                }
+            }
+
+            db.guardarPartida(new HistorialPartida(
+                    nombreJugador1, nombreJugador2, ganador, new Date().toString()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void volverLobby(ActionEvent event) {
+        Cambiar(event, "/com/fproject/vista/SalaEspera");
     }
 
     private void mostrarManos() {

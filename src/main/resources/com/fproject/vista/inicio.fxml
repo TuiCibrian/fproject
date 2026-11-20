@@ -44,6 +44,7 @@
          </children>
       </HBox>
       <Button fx:id="btnIniciar" onAction="#iniciarPartida" styleClass="btnMain" text="Iniciar partida" />
+      <Button onAction="#volverLobby" styleClass="btnMain" text="Volver al lobby" />
       <Label fx:id="lblEstado" text="Estado de la partida" textAlignment="CENTER" wrapText="true" />
    </children>
 </VBox>

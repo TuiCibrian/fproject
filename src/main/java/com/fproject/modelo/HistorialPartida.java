@@ -8,14 +8,16 @@ public class HistorialPartida implements Serializable {
     private String jugador1;
     private String jugador2;
     private String ganador;
+    private String fecha;
 
     public HistorialPartida() {
     }
 
-    public HistorialPartida(String jugador1, String jugador2, String ganador) {
+    public HistorialPartida(String jugador1, String jugador2, String ganador, String fecha) {
         this.jugador1 = jugador1;
         this.jugador2 = jugador2;
         this.ganador = ganador;
+        this.fecha = fecha;
     }
 
     public String getJugador1() {
@@ -40,6 +42,14 @@ public class HistorialPartida implements Serializable {
 
     public void setGanador(String ganador) {
         this.ganador = ganador;
+    }
+
+    public String getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(String fecha) {
+        this.fecha = fecha;
     }
 
 }
