@@ -31,7 +31,7 @@ public class IniciarSesionControlador {
 
     @FXML
     void PressIngresar(ActionEvent event) {
-
+    //cuando le picas al boton le pregunta al servidor si exite este usuario y si contraseña es correcta
     }
 
 }

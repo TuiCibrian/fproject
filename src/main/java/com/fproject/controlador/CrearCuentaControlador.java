@@ -26,7 +26,7 @@ public class CrearCuentaControlador {
 
     @FXML
     void PressCrear(ActionEvent event) {
-
+    //le dice al usuario que cree una cuenta, tiene que tener nombre unico
     }
 
     @FXML
