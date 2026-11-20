@@ -1,8 +1,5 @@
-# Build output
 target/
 
-# Compiled classes
 *.class
 
-# Base de datos db4o generada en tiempo de ejecucion
 cardjitsu.db4o
