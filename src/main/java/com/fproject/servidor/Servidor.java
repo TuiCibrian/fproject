@@ -10,7 +10,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Array;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -58,17 +57,28 @@ public class Servidor {
         }
     }
 
+    //copia del perfil sin el passwordHash para mandarla a los clientes
+    static JugadorPerfil perfilPublico(JugadorPerfil jugador) {
+        JugadorPerfil perfil = new JugadorPerfil();
+        perfil.setNombreUsuario(jugador.getNombreUsuario());
+        perfil.setRango(jugador.getRango());
+        perfil.setPartidasGanadas(jugador.getPartidasGanadas());
+        perfil.setPartidasPerdidas(jugador.getPartidasPerdidas());
+        perfil.setPuntos(jugador.getPuntos());
+        return perfil;
+    }
+
     private static synchronized void difundir(Mensaje mensaje) {
         for (Cliente cliente : CLIENTES) {
             cliente.enviar(mensaje);
         }
     }
 
-    private static final class Cliente implements Runnable {
+    static final class Cliente implements Runnable {
         private final Socket socket;
         private ObjectOutputStream salida;
-        private JugadorPerfil jugadorAutenticado;
-        private Cliente rival;
+        private volatile JugadorPerfil jugadorAutenticado;
+        volatile SalaJuego sala;
 
         private Cliente(Socket socket) {
             this.socket = socket;
@@ -95,15 +105,17 @@ public class Servidor {
                     }
                 }
             } catch (EOFException | SocketException e) {
-                System.out.println("Cliente Desconectado: " + this.jugadorAutenticado.getNombreUsuario());
+                System.out.println("Cliente Desconectado: " + nombreCliente());
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println("Error del Cliente " + socket.getPort() + ": " + e.getMessage());
             } finally {
                 CLIENTES.remove(this);
-                SALA_ESPERA.remove(this);
-                if (this.rival != null) {
-                    this.rival.rival = null;
-                    this.rival = null;
+                quitarDeEspera(this);
+
+                //si estaba en partida se le avisa al rival
+                SalaJuego salaActual = sala;
+                if (salaActual != null) {
+                    salaActual.salir(this);
                 }
                 try {
                     socket.close();
@@ -114,8 +126,28 @@ public class Servidor {
         }
 
 
+        JugadorPerfil getJugador() {
+            return jugadorAutenticado;
+        }
+
+        private String nombreCliente() {
+            if (jugadorAutenticado == null) {
+                return "sin sesión (" + socket.getPort() + ")";
+            }
+            return jugadorAutenticado.getNombreUsuario();
+        }
+
         //metodo para que el servidor sepa que tipo de mensaje es
         private void procesarMensaje(Mensaje msg) {
+            //fuera de login y registro, todo requiere haber iniciado sesión
+            if (jugadorAutenticado == null
+                    && msg.getAviso() != Mensaje.aviso.LOGIN
+                    && msg.getAviso() != Mensaje.aviso.CREAR_CUENTA) {
+                this.enviar(new Mensaje(Mensaje.aviso.LOGIN_ERROR, "Inicia Sesión Primero"));
+                return;
+            }
+
+            SalaJuego salaActual = sala;
             switch (msg.getAviso()) {
                 case LOGIN: {
                     //validaciones
@@ -145,7 +177,7 @@ public class Servidor {
 
                     //si paso validaciones enviamos un mensaje de exito
                     this.jugadorAutenticado = jugador;
-                    this.enviar(new Mensaje(Mensaje.aviso.LOGIN_OK, "Inicio de Sesión Existoso", jugador));
+                    this.enviar(new Mensaje(Mensaje.aviso.LOGIN_OK, "Inicio de Sesión Existoso", perfilPublico(jugador)));
                     System.out.println("Usuario Conectado :"+this.jugadorAutenticado.getNombreUsuario());
                     return;
                 }
@@ -177,20 +209,13 @@ public class Servidor {
                     //si paso validaciones enviamos un mensaje de exito y guardamos sus datos
                     this.jugadorAutenticado = datosLogin;
 
-                    JugadorPerfil perfilCliente = new JugadorPerfil();
-                    perfilCliente.setNombreUsuario(datosLogin.getNombreUsuario());
-                    perfilCliente.setRango(datosLogin.getRango());
-                    perfilCliente.setPartidasGanadas(datosLogin.getPartidasGanadas());
-                    perfilCliente.setPartidasPerdidas(datosLogin.getPartidasPerdidas());
-                    perfilCliente.setPuntos(datosLogin.getPuntos());
-
-                    this.enviar(new Mensaje(Mensaje.aviso.LOGIN_OK, "Cuenta Creada Correctamente",perfilCliente));
+                    this.enviar(new Mensaje(Mensaje.aviso.LOGIN_OK, "Cuenta Creada Correctamente", perfilPublico(datosLogin)));
                     System.out.println("Usuario Registrado y Conectado: "+this.jugadorAutenticado.getNombreUsuario());
                     return;
                 }
                 case HISTORIAL: {
-                    JugadorPerfil datosLogin = msg.getJugadorActual();
-                    String nombre = datosLogin.getNombreUsuario();
+                    //se usa el jugador que inició sesión, no el que manda el cliente
+                    String nombre = jugadorAutenticado.getNombreUsuario();
 
                     ArrayList<HistorialPartida> lista = db.obtenerHistorialJugador(nombre);
 
@@ -198,15 +223,32 @@ public class Servidor {
                     return;
                 }
                 case BUSCAR_PARTIDA: {
-                    if (msg.getJugadorActual() != null && msg.getJugadorActual().getNombreUsuario() != null) {
-                        this.jugadorAutenticado = msg.getJugadorActual();
-                    }
                     procesarBusqueda(this);
                     return;
                 }
                 case CANCELAR_BUSQUEDA:{
-                    cancelarBusqueda(this);
-                    this.enviar(new Mensaje(Mensaje.aviso.BUSQUEDA_CANCELADA,"Busqueda Cancelada"));
+                    //si ya lo emparejaron, el cliente recibe PARTIDA_OK y entra a la partida
+                    if (cancelarBusqueda(this)) {
+                        this.enviar(new Mensaje(Mensaje.aviso.BUSQUEDA_CANCELADA,"Busqueda Cancelada"));
+                    }
+                    return;
+                }
+                case SELECCIONAR_CARTA: {
+                    if (salaActual != null) {
+                        salaActual.seleccionarCarta(this, msg.getIndice());
+                    }
+                    return;
+                }
+                case REVANCHA: {
+                    if (salaActual != null) {
+                        salaActual.pedirRevancha(this);
+                    }
+                    return;
+                }
+                case SALIR_PARTIDA: {
+                    if (salaActual != null) {
+                        salaActual.salir(this);
+                    }
                     return;
                 }
                 default:
@@ -215,8 +257,8 @@ public class Servidor {
         }
 
         private static synchronized void procesarBusqueda(Cliente solicitante) {
-            //si ya esta esperando no lo agregamos
-            if (SALA_ESPERA.contains(solicitante)) {
+            //si ya esta esperando o jugando no lo agregamos
+            if (solicitante.sala != null || SALA_ESPERA.contains(solicitante)) {
                 return;
             }
 
@@ -234,20 +276,21 @@ public class Servidor {
                 return;
             }
 
-            solicitante.rival = rival;
-            rival.rival = solicitante;
-
-            String nombreSolicitante = solicitante.jugadorAutenticado.getNombreUsuario();
-            String nombreRival = rival.jugadorAutenticado.getNombreUsuario();
+            SalaJuego salaNueva = new SalaJuego(rival, solicitante);
+            solicitante.sala = salaNueva;
+            rival.sala = salaNueva;
+            System.out.println("Partida: " + rival.nombreCliente() + " vs " + solicitante.nombreCliente());
 
             //le enviamos al rival y al primer usuario en espera los datos del otro
-            solicitante.enviar(new Mensaje(Mensaje.aviso.PARTIDA_OK, rival.jugadorAutenticado));
-            rival.enviar(new Mensaje(Mensaje.aviso.PARTIDA_OK, solicitante.jugadorAutenticado));
+            solicitante.enviar(new Mensaje(Mensaje.aviso.PARTIDA_OK, perfilPublico(rival.jugadorAutenticado)));
+            rival.enviar(new Mensaje(Mensaje.aviso.PARTIDA_OK, perfilPublico(solicitante.jugadorAutenticado)));
 
+            //despues de PARTIDA_OK se manda la primera mano de cada uno
+            salaNueva.iniciar();
         }
 
         //metodo para enviar mensajes a un cliente
-        private synchronized void enviar(Mensaje mensaje) {
+        synchronized void enviar(Mensaje mensaje) {
             try {
                 salida.writeObject(mensaje);
                 salida.flush();
@@ -262,9 +305,14 @@ public class Servidor {
             }
         }
 
-        private static synchronized void cancelarBusqueda(Cliente solicitante) {
-            SALA_ESPERA.remove(solicitante);
-            System.out.println("Jugador cancelo búsqueda: " + solicitante.jugadorAutenticado.getNombreUsuario());
+        private static synchronized boolean cancelarBusqueda(Cliente solicitante) {
+            boolean estaba = SALA_ESPERA.remove(solicitante);
+            System.out.println("Jugador cancelo búsqueda: " + solicitante.nombreCliente());
+            return estaba;
+        }
+
+        private static synchronized void quitarDeEspera(Cliente cliente) {
+            SALA_ESPERA.remove(cliente);
         }
     }
 }

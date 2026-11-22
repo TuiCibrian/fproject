@@ -1,6 +1,7 @@
 package com.fproject.datos;
 
 import com.fproject.modelo.Carta;
+import com.fproject.modelo.EstadoJuego;
 import com.fproject.modelo.HistorialPartida;
 import com.fproject.modelo.JugadorPerfil;
 
@@ -22,7 +23,14 @@ public class Mensaje implements Serializable {
         CANCELAR_BUSQUEDA,
         BUSQUEDA_CANCELADA,
         PARTIDA_OK,
-        AVISO
+        AVISO,
+        ESTADO_JUEGO,
+        SELECCIONAR_CARTA,
+        FIN_PARTIDA,
+        REVANCHA,
+        SALIR_PARTIDA,
+        RIVAL_DESCONECTADO,
+        CONEXION_PERDIDA
     }
 
     private aviso aviso;
@@ -34,6 +42,10 @@ public class Mensaje implements Serializable {
     private Carta carta;
 
     private ArrayList<HistorialPartida> historial;
+
+    private EstadoJuego estado;
+
+    private int indice;
 
     public Mensaje() {
 
@@ -69,6 +81,11 @@ public class Mensaje implements Serializable {
     public Mensaje(aviso aviso, ArrayList<HistorialPartida>  historialPartida) {
         this.aviso = aviso;
         this.historial = historialPartida;
+    }
+
+    public Mensaje(aviso aviso, int indice) {
+        this.aviso = aviso;
+        this.indice = indice;
     }
 
     public aviso getAviso() {
@@ -109,5 +126,21 @@ public class Mensaje implements Serializable {
 
     public void setHistorial(ArrayList<HistorialPartida> historial) {
         this.historial = historial;
+    }
+
+    public EstadoJuego getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoJuego estado) {
+        this.estado = estado;
+    }
+
+    public int getIndice() {
+        return indice;
+    }
+
+    public void setIndice(int indice) {
+        this.indice = indice;
     }
 }

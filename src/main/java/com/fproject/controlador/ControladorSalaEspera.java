@@ -1,13 +1,12 @@
 package com.fproject.controlador;
 
-import java.util.ArrayList;
+import java.io.IOException;
 
 import com.fproject.datos.General;
 import com.fproject.datos.Mensaje;
 import com.fproject.datos.RedCliente;
 import com.fproject.modelo.HistorialPartida;
 import com.fproject.modelo.JugadorPerfil;
-import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -15,7 +14,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 import static com.fproject.datos.General.Cambiar;
-import static com.fproject.controlador.IniciarSesionControlador.servidor;
 import static com.fproject.datos.General.mostrarError;
 
 
@@ -38,6 +36,9 @@ public class ControladorSalaEspera {
 
     @FXML
     private TableColumn<HistorialPartida, String> colFecha;
+
+    private Alert alertaBusqueda;
+    private boolean buscando;
 
     @FXML
     public void initialize() {
@@ -62,25 +63,39 @@ public class ControladorSalaEspera {
         colFecha.setCellValueFactory(c ->
                 new ReadOnlyStringWrapper(c.getValue().getFecha() == null ? "" : c.getValue().getFecha()));
 
-        Thread hiloHistorial = new Thread(() -> {
-            try {
-                RedCliente.enviar(new Mensaje(Mensaje.aviso.HISTORIAL, jugador));
-                Mensaje respuesta = RedCliente.recibir();
+        //las respuestas del servidor llegan a procesarMensaje
+        RedCliente.setOyente(msg -> procesarMensaje(msg));
+        enviarAlServidor(new Mensaje(Mensaje.aviso.HISTORIAL, jugador));
+    }
 
-                Platform.runLater(() -> {
-                    if (respuesta != null && respuesta.getAviso() == Mensaje.aviso.HISTORIAL_OK) {
-                        tablaHistorial.setItems(FXCollections.observableArrayList(respuesta.getHistorial()));
-                    } else {
-                        General.mostrarError(respuesta.getMensaje());
-                    }
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-
-        hiloHistorial.setDaemon(true);
-        hiloHistorial.start();
+    private void procesarMensaje(Mensaje msg) {
+        switch (msg.getAviso()) {
+            case HISTORIAL_OK:
+                tablaHistorial.setItems(FXCollections.observableArrayList(msg.getHistorial()));
+                break;
+            case PARTIDA_OK:
+                //el servidor ya creó la sala, asi que se entra aunque se haya presionado cancelar
+                cerrarBusqueda();
+                General.setRivalActual(msg.getJugadorActual());
+                System.out.println("Partida Encontrada Contra: " + msg.getJugadorActual().getNombreUsuario());
+                Cambiar(lblBienvenida, "/com/fproject/vista/JuegoOnline");
+                break;
+            case BUSQUEDA_CANCELADA:
+                cerrarBusqueda();
+                break;
+            case CONEXION_PERDIDA:
+                cerrarBusqueda();
+                General.setJugadorActual(null);
+                mostrarError(msg.getMensaje());
+                Cambiar(lblBienvenida, "/com/fproject/vista/IniciarSesion");
+                break;
+            case LOGIN_ERROR:
+            case HISTORIAL_ERROR:
+                mostrarError(msg.getMensaje());
+                break;
+            default:
+                break;
+        }
     }
 
     @FXML
@@ -90,89 +105,59 @@ public class ControladorSalaEspera {
             General.mostrarError("Inicia Sesion Para Jugar Online");
             return;
         }
+        if (buscando) {
+            return;
+        }
+        buscando = true;
 
-        final boolean[] buscando = {true};
-
-        Alert alertaBusqueda = new Alert(Alert.AlertType.INFORMATION);
+        alertaBusqueda = new Alert(Alert.AlertType.INFORMATION);
         alertaBusqueda.setTitle("Emparejamiento");
         alertaBusqueda.setHeaderText(null);
         alertaBusqueda.setContentText("Buscando Rival...");
         alertaBusqueda.getButtonTypes().setAll(ButtonType.CANCEL);
+
+        //si el usuario cierra la alerta mientras se busca, le decimos al servidor que cancele
+        alertaBusqueda.setOnHidden(e -> {
+            if (buscando) {
+                buscando = false;
+                enviarAlServidor(new Mensaje(Mensaje.aviso.CANCELAR_BUSQUEDA, jugador));
+            }
+        });
         alertaBusqueda.show();
 
-        //al presionar boton cancelar le decimos al servidor que cancele todo
-        alertaBusqueda.setOnCloseRequest(e -> {
-            if (buscando[0]) {
-                buscando[0] = false;
-                Thread hiloCancelar = new Thread(() -> {
-                    try {
-                        RedCliente.enviar(new Mensaje(Mensaje.aviso.CANCELAR_BUSQUEDA, jugador));
-                    } catch (Exception e2) {
-                        mostrarError(e2.getMessage());
-                    }
-                });
-                hiloCancelar.setDaemon(true);
-                hiloCancelar.start();
-            }
-        });
+        enviarAlServidor(new Mensaje(Mensaje.aviso.BUSCAR_PARTIDA, jugador));
+    }
 
-        Thread hiloEmparejamiento = new Thread(() -> {
-            try {
-                //le dice al servidor que quiere buscar partida
-                RedCliente.enviar(new Mensaje(Mensaje.aviso.BUSCAR_PARTIDA, jugador));
+    private void cerrarBusqueda() {
+        buscando = false;
+        if (alertaBusqueda != null) {
+            alertaBusqueda.close();
+        }
+    }
 
-                //mientras sigamos buscando se ejecuta la espera
-                while (buscando[0]) {
-                    Mensaje respuesta = RedCliente.recibir();
-
-                    //si recibimos respuesta nula o no estamos buscando, salimos
-                    if(respuesta == null || !buscando[0]){
-                        break;
-                    }
-
-                    //si el servidor cancela la busqueda salimos
-                    if(respuesta.getAviso()==Mensaje.aviso.BUSQUEDA_CANCELADA){
-                        break;
-                    }
-
-                    //si el servidor encontro partida dejamos de buscar partida y vamos a la pelea
-                    if (respuesta.getAviso() == Mensaje.aviso.PARTIDA_OK) {
-                        JugadorPerfil rival = respuesta.getJugadorActual();
-                        Platform.runLater(() -> {
-                            if(!buscando[0]){
-                                alertaBusqueda.close();
-                                return;
-                            }
-                            buscando[0] = false;
-                            alertaBusqueda.close();
-                            System.out.println("Partida Encontrada Contra: " + rival.getNombreUsuario());
-                            Cambiar(event, "/com/fproject/vista/Inicio");
-                        });
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    alertaBusqueda.close();
-                    if (buscando[0]) {
-                        General.mostrarError("Error En Emparejamiento: " + e.getMessage());
-                    }
-                });
-            }
-        });
-
-        hiloEmparejamiento.setDaemon(true);
-        hiloEmparejamiento.start();
+    private void enviarAlServidor(Mensaje msg) {
+        try {
+            RedCliente.enviar(msg);
+        } catch (IOException e) {
+            e.printStackTrace();
+            mostrarError("No se pudo comunicar con el servidor: " + e.getMessage());
+        }
     }
 
     @FXML
     private void jugarLocal(ActionEvent event) {
+        //el juego local no usa la red
+        RedCliente.setOyente(null);
         Cambiar(event, "/com/fproject/vista/inicio");
     }
 
     @FXML
     private void cerrarSesion(ActionEvent event) {
+        //al cerrar el socket el servidor lo saca de la busqueda
+        RedCliente.setOyente(null);
+        RedCliente.cerrar();
         General.setJugadorActual(null);
+        General.setRivalActual(null);
         Cambiar(event, "/com/fproject/vista/IniciarSesion");
     }
 

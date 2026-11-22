@@ -21,7 +21,7 @@ import static com.fproject.datos.BuscadorServidor.ServidorEncontrado;
 
 public class IniciarSesionControlador {
     //aqui estan los datos del servidor encontrado, es estatico para usarlo en todos los controladores
-    public static BuscadorServidor.ServidorEncontrado servidor;
+    public static volatile BuscadorServidor.ServidorEncontrado servidor;
 
     @FXML
     private Button BTNIngresar;
@@ -41,6 +41,8 @@ public class IniciarSesionControlador {
     }
 
     public void initialize() {
+        RedCliente.setOyente(msg -> procesarMensaje(msg));
+
         //si ya esta el servidor no necesitamos asignarlo otra vez
         if (servidor != null) {
             return;
@@ -60,12 +62,29 @@ public class IniciarSesionControlador {
         hiloBusqueda.start();
     }
 
+    //si la busqueda UDP no ha terminado o falló se intenta otra vez; si tampoco, se usa este equipo
+    public static BuscadorServidor.ServidorEncontrado obtenerServidor() {
+        if (servidor == null) {
+            servidor = BuscadorServidor.buscar(12346, 2000);
+        }
+        if (servidor == null) {
+            return new BuscadorServidor.ServidorEncontrado("localhost", 12345);
+        }
+        return servidor;
+    }
+
+    private void procesarMensaje(Mensaje msg) {
+        if (msg.getAviso() == Mensaje.aviso.LOGIN_OK) {
+            setJugadorActual(msg.getJugadorActual());
+            Cambiar(BTNIngresar, "/com/fproject/vista/SalaEspera");
+        } else if (msg.getAviso() == Mensaje.aviso.LOGIN_ERROR || msg.getAviso() == Mensaje.aviso.CONEXION_PERDIDA) {
+            BTNIngresar.setDisable(false);
+            mostrarError(msg.getMensaje());
+        }
+    }
+
     @FXML
     private void PressIngresar(ActionEvent event) {
-        if (servidor == null){
-            mostrarError("No Se Encontró El Servidor");
-            return;
-        }
         //sacar datos de fields
         String usuario = FieldUsuario.getText().trim();
         String contrasena = FieldPassword.getText();
@@ -76,22 +95,12 @@ public class IniciarSesionControlador {
 
         BTNIngresar.setDisable(true);
 
+        //la respuesta del servidor llega a procesarMensaje
         Thread hiloLogin = new Thread(() -> {
             try {
-                RedCliente.conectar(servidor.ip(), servidor.puertoTCP());
+                ServidorEncontrado datosServidor = obtenerServidor();
+                RedCliente.conectar(datosServidor.ip(), datosServidor.puertoTCP());
                 RedCliente.enviar(new Mensaje(Mensaje.aviso.LOGIN, datos));
-                Mensaje respuesta = RedCliente.recibir();
-
-                Platform.runLater(() -> {
-                    BTNIngresar.setDisable(false);
-                    if(respuesta.getAviso() == Mensaje.aviso.LOGIN_OK){
-                        setJugadorActual(respuesta.getJugadorActual());
-                        Cambiar(event, "/com/fproject/vista/SalaEspera");
-                    }
-                    else{
-                        mostrarError(respuesta.getMensaje());
-                    }
-                });
             }
             catch(Exception e) {
                 Platform.runLater(() -> {
