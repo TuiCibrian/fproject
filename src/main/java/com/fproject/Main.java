@@ -16,14 +16,9 @@ public class Main extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/fproject/vista/IniciarSesion.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
-        stage.setTitle("Monito Card-Jitsu");
+        stage.setTitle("Monkey Fighters");
         stage.setMaximized(true);
         stage.setScene(scene);
         stage.show();
-    }
-
-    @Override
-    public void stop() {
-        ManejadorDB4O.cerrarBaseDatos();
     }
 }

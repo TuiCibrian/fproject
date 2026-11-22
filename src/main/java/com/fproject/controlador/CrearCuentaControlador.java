@@ -1,8 +1,8 @@
 package com.fproject.controlador;
 
-import com.fproject.datos.ManejadorDB4O;
-import com.fproject.datos.Seguridad;
+import com.fproject.datos.*;
 import com.fproject.modelo.JugadorPerfil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -12,7 +12,8 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 
-import static com.fproject.datos.General.Cambiar;
+import static com.fproject.datos.General.*;
+import static com.fproject.controlador.IniciarSesionControlador.servidor;
 
 public class CrearCuentaControlador {
 
@@ -30,50 +31,46 @@ public class CrearCuentaControlador {
 
     @FXML
     void PressCrear(ActionEvent event) {
+        if (servidor == null){
+            mostrarError("No Se Encontró El Servidor");
+            return;
+        }
+        //sacar datos de fields
         String usuario = FieldUsuario.getText().trim();
         String contrasena = FieldPassword.getText();
 
-        if (usuario.isBlank() || contrasena.isBlank()) {
-            mostrarError("Escribe usuario y contraseña.");
-            return;
-        }
+        JugadorPerfil datos = new JugadorPerfil();
+        datos.setNombreUsuario(usuario);
+        datos.setPasswordHash(contrasena);
 
-        if (contrasena.length() < 4) {
-            mostrarError("La contraseña debe tener al menos 4 caracteres.");
-            return;
-        }
+        BTNCrear.setDisable(true);
 
-        try {
-            ManejadorDB4O db = ManejadorDB4O.getInstancia();
+        Thread hiloLogin = new Thread(() -> {
+            try {
+                RedCliente.conectar(servidor.ip(), servidor.puertoTCP());
+                RedCliente.enviar(new Mensaje(Mensaje.aviso.CREAR_CUENTA, datos));
+                Mensaje respuesta = RedCliente.recibir();
 
-            if (db.buscarJugador(usuario) != null) {
-                mostrarError("Ese usuario ya existe.");
-                return;
+                Platform.runLater(() -> {
+                    BTNCrear.setDisable(false);
+                    if(respuesta.getAviso() == Mensaje.aviso.LOGIN_OK){
+                        setJugadorActual(respuesta.getJugadorActual());
+                        Cambiar(event, "/com/fproject/vista/SalaEspera");
+                    }
+                    else{
+                        mostrarError(respuesta.getMensaje());
+                    }
+                });
             }
-
-            JugadorPerfil jugador = new JugadorPerfil(usuario);
-            jugador.setPasswordHash(Seguridad.hashSHA256(contrasena));
-            db.guardarJugador(jugador);
-
-            Alert alerta = new Alert(Alert.AlertType.INFORMATION);
-            alerta.setTitle("Crear cuenta");
-            alerta.setHeaderText(null);
-            alerta.setContentText("Cuenta creada. Ahora inicia sesión.");
-            alerta.showAndWait();
-
-            Cambiar(event, "/com/fproject/vista/IniciarSesion");
-        } catch (Exception e) {
-            e.printStackTrace();
-            mostrarError("No se pudo guardar la cuenta.");
-        }
-    }
-
-    private void mostrarError(String mensaje) {
-        Alert alerta = new Alert(Alert.AlertType.WARNING);
-        alerta.setTitle("Crear cuenta");
-        alerta.setHeaderText(null);
-        alerta.setContentText(mensaje);
-        alerta.showAndWait();
+            catch(Exception e) {
+                Platform.runLater(() -> {
+                    BTNCrear.setDisable(false);
+                    mostrarError("Error de Conexión: "+e.getMessage());
+                });
+            }
+        });
+        hiloLogin.setDaemon(true);
+        hiloLogin.start();
     }
 
     @FXML

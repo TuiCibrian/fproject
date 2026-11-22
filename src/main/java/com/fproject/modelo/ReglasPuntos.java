@@ -22,16 +22,16 @@ public class ReglasPuntos {
 
     private static String calcularRango(int puntos) {
         if (puntos >= 100) {
-            return "Diamante";
+            return "Maestro";
         }
         if (puntos >= 50) {
-            return "Oro";
+            return "Profesional";
         }
         if (puntos >= 25) {
-            return "Plata";
+            return "Avanzado";
         }
         if (puntos >= 10) {
-            return "Bronce";
+            return "Amateur";
         }
         return "Novato";
     }
