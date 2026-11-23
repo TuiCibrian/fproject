@@ -13,7 +13,16 @@ Color Texto: #FFFFFF
 
 /* Botones */
 .btnMain{
+    transition: -fx-background-color 0.2s, -fx-scale-x 0.2s, -fx-scale-y 0.2s;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+    -fx-background-color: #F3642C;
+}
 
+.btnMain:hover{
+    -fx-background-color: #ff8f5e;
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
 }
 
 /* Imagenes */
@@ -21,7 +30,24 @@ Color Texto: #FFFFFF
 
 }
 
-/* Input Fields */
-.TextField{
+.cardMono{
+    -fx-background-color: #68584f;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+    transition: -fx-scale-y 0.2s, -fx-scale-x 0.2s;
+    -fx-background-radius: 5px;
+}
+
+.cardMono:hover{
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+}
+
+/* Tabla de Puntuaciones */
+.tabla{
+
+}
+
+.col{
 
 }

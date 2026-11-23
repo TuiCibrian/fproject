@@ -30,7 +30,8 @@ public class Mensaje implements Serializable {
         REVANCHA,
         SALIR_PARTIDA,
         RIVAL_DESCONECTADO,
-        CONEXION_PERDIDA
+        CONEXION_PERDIDA,
+        CAMBIAR_MONO
     }
 
     private aviso aviso;

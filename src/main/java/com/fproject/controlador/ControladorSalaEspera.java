@@ -168,5 +168,10 @@ public class ControladorSalaEspera {
         return partida.getJugador1();
     }
 
+    @FXML
+    private void PressCambiarPeleador(ActionEvent event){
+        Cambiar(event, "/com/fproject/vista/IniciarSesion");
+    }
+
 
 }

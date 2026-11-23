@@ -11,6 +11,7 @@ public class JugadorPerfil implements Serializable {
     private int puntos;
     private String rango;
     private String passwordHash;
+    private String Peleador;
 
     public JugadorPerfil() {
     }
@@ -66,5 +67,13 @@ public class JugadorPerfil implements Serializable {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getPeleador() {
+        return Peleador;
+    }
+
+    public void setPeleador(String peleador) {
+        Peleador = peleador;
     }
 }
