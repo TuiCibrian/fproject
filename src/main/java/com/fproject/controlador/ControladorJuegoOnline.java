@@ -9,11 +9,17 @@ import com.fproject.datos.RedCliente;
 import com.fproject.modelo.Carta;
 import com.fproject.modelo.EstadoJuego;
 import com.fproject.modelo.JugadorPerfil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import static com.fproject.datos.General.Cambiar;
 import static com.fproject.datos.General.mostrarError;
@@ -21,10 +27,19 @@ import static com.fproject.datos.General.mostrarError;
 //el cliente solo muestra el estado y manda la carta elegida; el servidor resuelve la ronda
 public class ControladorJuegoOnline {
     @FXML
-    private Label lblJugador;
+    private Button btnRevancha;
 
     @FXML
-    private Label lblRival;
+    private HBox cartasRival;
+
+    @FXML
+    private HBox cartasYo;
+
+    @FXML
+    private ImageView imgRival;
+
+    @FXML
+    private ImageView imgYo;
 
     @FXML
     private Label lblCartasGanadas;
@@ -33,17 +48,19 @@ public class ControladorJuegoOnline {
     private Label lblCartasGanadasRival;
 
     @FXML
-    private HBox manoJugador;
+    private Label lblEstado;
 
-    //resultado de la ultima ronda; lblEstado es lo que hay que hacer ahora
+    @FXML
+    private Label lblJugador;
+
+    @FXML
+    private Label lblRival;
+
     @FXML
     private Label lblRonda;
 
     @FXML
-    private Label lblEstado;
-
-    @FXML
-    private Button btnRevancha;
+    private HBox manoJugador;
 
     //en el estado que manda el servidor, jugador1 siempre es este cliente
     private EstadoJuego estado;
@@ -56,12 +73,33 @@ public class ControladorJuegoOnline {
 
         if (jugador != null) {
             lblJugador.setText(jugador.getNombreUsuario() + " (tú)");
-        }
-        if (rival != null) {
-            lblRival.setText(rival.getNombreUsuario() + " - " + rival.getRango());
+            if (jugador.getPeleador() != null) {
+                imgYo.setImage(new Image("/com/fproject/vista/images/" + jugador.getPeleador() + "1.png"));
+                if ("Sumo".equals(jugador.getPeleador())) {
+                    imgYo.setFitWidth(290);
+                    imgYo.setFitHeight(290);
+                } else {
+                    imgYo.setFitWidth(180);
+                    imgYo.setFitHeight(180);
+                }
+            }
         }
 
-        RedCliente.setOyente(msg -> procesarMensaje(msg));
+        if (rival != null) {
+            lblRival.setText(rival.getNombreUsuario() + " - " + rival.getRango());
+            if (rival.getPeleador() != null) {
+                imgRival.setImage(new Image("/com/fproject/vista/images/" + rival.getPeleador() + "1.png"));
+                if ("Sumo".equals(rival.getPeleador())) {
+                    imgRival.setFitWidth(290);
+                    imgRival.setFitHeight(290);
+                } else {
+                    imgRival.setFitWidth(180);
+                    imgRival.setFitHeight(180);
+                }
+            }
+        }
+
+        RedCliente.setOyente(msg -> Platform.runLater(() -> procesarMensaje(msg)));
     }
 
     private void procesarMensaje(Mensaje msg) {
@@ -149,27 +187,62 @@ public class ControladorJuegoOnline {
             int indice = i;
             Button boton = new Button(mano.get(i).getElemento() + "\n" + mano.get(i).getValor() + "\n" + mano.get(i).getColor());
 
-            boton.setPrefWidth(100);
-            boton.setPrefHeight(80);
-            boton.setWrapText(true);
-            boton.setDisable(!puedeElegir);
             boton.setOnAction(event -> seleccionarCarta(indice));
+            boton.setPrefWidth(105);
+            boton.setPrefHeight(92);
+            boton.setWrapText(true);
+            boton.setStyle(estiloCarta(mano.get(i)));
+            boton.setDisable(!puedeElegir);
             manoJugador.getChildren().add(boton);
         }
 
-        lblCartasGanadas.setText(describirGanadas(estado.getCartasGanadasJugador1()));
-        lblCartasGanadasRival.setText(describirGanadas(estado.getCartasGanadasJugador2()));
+        cartasYo.getChildren().clear();
+        cartasYo.getChildren().add(describirGanadas(estado.getCartasGanadasJugador1()));
+        cartasRival.getChildren().clear();
+        cartasRival.getChildren().add(describirGanadas(estado.getCartasGanadasJugador2()));
     }
 
-    private String describirGanadas(ArrayList<Carta> cartas) {
-        String texto = "Cartas ganadas: " + cartas.size();
+    private HBox describirGanadas(ArrayList<Carta> cartas) {
+        HBox contenedor = new HBox();
+        contenedor.setSpacing(10);
         for (Carta carta : cartas) {
-            texto += "\n" + describirCarta(carta);
+            contenedor.getChildren().add(describirCarta(carta));
         }
-        return texto;
+        return contenedor;
     }
 
-    private String describirCarta(Carta carta) {
-        return carta.getElemento() + " " + carta.getValor() + " " + carta.getColor();
+    private VBox describirCarta(Carta carta) {
+        VBox cartita = new VBox();
+        cartita.setAlignment(Pos.CENTER);
+        cartita.setStyle("-fx-background-radius: 10px;");
+        switch (carta.getColor()) {
+            case "Rojo":
+                cartita.setStyle("-fx-background-color: #ff5252;");
+                break;
+            case "Azul":
+                cartita.setStyle("-fx-background-color: #52b7ff;");
+                break;
+            case "Verde":
+                cartita.setStyle("-fx-background-color: #77ff52;");
+                break;
+        }
+        ImageView imagen = new ImageView("/com/fproject/vista/images/" + carta.getElemento() + ".png");
+        imagen.setFitWidth(25);
+        imagen.setFitHeight(25);
+        cartita.getChildren().add(imagen);
+        return cartita;
+    }
+
+    private String estiloCarta(Carta carta) {
+        String elemento = carta.getElemento() == null ? "" : carta.getElemento().toLowerCase();
+        String borde = switch (elemento) {
+            case "fuego" -> "#ff5252";
+            case "agua" -> "#40c4ff";
+            case "hielo" -> "#e0f7fa";
+            default -> "#ffd54f";
+        };
+        return "-fx-background-color: #232026; -fx-text-fill: white; -fx-font-weight: bold; "
+                + "-fx-background-radius: 10; -fx-border-color: " + borde + "; "
+                + "-fx-border-width: 2.5; -fx-border-radius: 10; -fx-cursor: hand;";
     }
 }

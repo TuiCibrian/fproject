@@ -31,7 +31,9 @@ public class Mensaje implements Serializable {
         SALIR_PARTIDA,
         RIVAL_DESCONECTADO,
         CONEXION_PERDIDA,
-        CAMBIAR_MONO
+        CAMBIAR_MONO,
+        CAMBIAR_OK,
+        CAMBIAR_ERROR
     }
 
     private aviso aviso;

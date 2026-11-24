@@ -10,7 +10,7 @@ public class ReglasJuego {
 
     private static final String FUEGO = "Fuego";
     private static final String AGUA = "Agua";
-    private static final String PLANTA = "Planta";
+    private static final String HIELO = "Hielo";
 
     public EstadoJuego iniciarPartida() {
         EstadoJuego estado = new EstadoJuego();
@@ -26,7 +26,7 @@ public class ReglasJuego {
 
         elementos.add(FUEGO);
         elementos.add(AGUA);
-        elementos.add(PLANTA);
+        elementos.add(HIELO);
 
         colores.add("Rojo");
         colores.add("Azul");
@@ -86,15 +86,15 @@ public class ReglasJuego {
     }
 
     private boolean ganaElemento(String elemento1, String elemento2) {
-        return (FUEGO.equals(elemento1) && PLANTA.equals(elemento2))
-                || (PLANTA.equals(elemento1) && AGUA.equals(elemento2))
+        return (FUEGO.equals(elemento1) && HIELO.equals(elemento2))
+                || (HIELO.equals(elemento1) && AGUA.equals(elemento2))
                 || (AGUA.equals(elemento1) && FUEGO.equals(elemento2));
     }
 
     private boolean tieneTresElementos(ArrayList<Carta> cartas) {
         boolean tieneFuego = false;
         boolean tieneAgua = false;
-        boolean tienePlanta = false;
+        boolean tieneHielo = false;
 
         for (Carta carta : cartas) {
             if (FUEGO.equals(carta.getElemento())) {
@@ -103,12 +103,12 @@ public class ReglasJuego {
             if (AGUA.equals(carta.getElemento())) {
                 tieneAgua = true;
             }
-            if (PLANTA.equals(carta.getElemento())) {
-                tienePlanta = true;
+            if (HIELO.equals(carta.getElemento())) {
+                tieneHielo = true;
             }
         }
 
-        return tieneFuego && tieneAgua && tienePlanta;
+        return tieneFuego && tieneAgua && tieneHielo;
     }
 
     private boolean tieneTresColores(ArrayList<Carta> cartas) {

@@ -15,6 +15,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -65,6 +66,7 @@ public class Servidor {
         perfil.setPartidasGanadas(jugador.getPartidasGanadas());
         perfil.setPartidasPerdidas(jugador.getPartidasPerdidas());
         perfil.setPuntos(jugador.getPuntos());
+        perfil.setPeleador(jugador.getPeleador());
         return perfil;
     }
 
@@ -204,6 +206,7 @@ public class Servidor {
                     datosLogin.setNombreUsuario(usuario.trim());
                     datosLogin.setPasswordHash(Seguridad.hashSHA256(password));
                     datosLogin.setRango("Novato");
+                    datosLogin.setPeleador("Box");
                     db.guardarJugador(datosLogin);
 
                     //si paso validaciones enviamos un mensaje de exito y guardamos sus datos
@@ -249,6 +252,16 @@ public class Servidor {
                     if (salaActual != null) {
                         salaActual.salir(this);
                     }
+                    return;
+                }
+                case CAMBIAR_MONO: {
+                    if(!Objects.equals(msg.getMensaje(), "Box") && !Objects.equals(msg.getMensaje(), "Karate") && !Objects.equals(msg.getMensaje(), "Sumo")) {
+                        this.enviar(new Mensaje(Mensaje.aviso.CAMBIAR_ERROR,"Peleador Invalido"));
+                        return;
+                    }
+                    this.getJugador().setPeleador(msg.getMensaje());
+                    db.guardarJugador(this.getJugador());
+                    this.enviar(new Mensaje(Mensaje.aviso.CAMBIAR_OK,this.getJugador()));
                     return;
                 }
                 default:

@@ -89,9 +89,11 @@ public class ControladorSalaEspera {
                 mostrarError(msg.getMensaje());
                 Cambiar(lblBienvenida, "/com/fproject/vista/IniciarSesion");
                 break;
-            case LOGIN_ERROR:
-            case HISTORIAL_ERROR:
+            case LOGIN_ERROR, HISTORIAL_ERROR, CAMBIAR_ERROR:
                 mostrarError(msg.getMensaje());
+                break;
+            case CAMBIAR_OK:
+                General.getJugadorActual().setPeleador(msg.getJugadorActual().getPeleador());
                 break;
             default:
                 break;
@@ -114,6 +116,9 @@ public class ControladorSalaEspera {
         alertaBusqueda.setTitle("Emparejamiento");
         alertaBusqueda.setHeaderText(null);
         alertaBusqueda.setContentText("Buscando Rival...");
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setPrefSize(40, 40);
+        alertaBusqueda.setGraphic(progressIndicator);
         alertaBusqueda.getButtonTypes().setAll(ButtonType.CANCEL);
 
         //si el usuario cierra la alerta mientras se busca, le decimos al servidor que cancele
@@ -135,7 +140,7 @@ public class ControladorSalaEspera {
         }
     }
 
-    private void enviarAlServidor(Mensaje msg) {
+    public static void enviarAlServidor(Mensaje msg) {
         try {
             RedCliente.enviar(msg);
         } catch (IOException e) {
@@ -170,7 +175,7 @@ public class ControladorSalaEspera {
 
     @FXML
     private void PressCambiarPeleador(ActionEvent event){
-        Cambiar(event, "/com/fproject/vista/IniciarSesion");
+        Cambiar(event, "/com/fproject/vista/Seleccion");
     }
 
 
