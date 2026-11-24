@@ -219,6 +219,7 @@ public class ControladorJuegoOnline {
         VBox cartita = new VBox();
         cartita.setAlignment(Pos.CENTER);
         cartita.setStyle("-fx-background-radius: 10px;");
+        cartita.setPadding(new Insets(0,5,0,5));
         switch (carta.getColor()) {
             case "Rojo":
                 cartita.setStyle("-fx-background-color: #ff5252;");
@@ -256,7 +257,7 @@ public class ControladorJuegoOnline {
             default -> "#ffd54f";
         };
         return "-fx-background-color: transparent; -fx-padding: 0; -fx-cursor: hand; "
-                + "-fx-border-color: " + color + "; -fx-border-width: 4;";
+                + "-fx-border-color: " + color + "; -fx-border-width: 4; -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0.2, 4, 4);";
     }
 
     private String peleadorDe(JugadorPerfil jugador) {

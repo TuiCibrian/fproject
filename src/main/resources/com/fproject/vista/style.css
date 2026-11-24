@@ -11,6 +11,12 @@ Color Texto: #FFFFFF
 
 }
 
+/* Cambiar color de acento de javaFX */
+.root {
+    -fx-accent: #F3642C;
+    -fx-focus-color: #F3642C;
+}
+
 /* Botones */
 .btnMain{
     transition: -fx-background-color 0.2s, -fx-scale-x 0.2s, -fx-scale-y 0.2s;
@@ -50,10 +56,6 @@ Color Texto: #FFFFFF
     -fx-border-radius: 5px;
 }
 
-.progress-indicator{
-    -fx-progress-color: #F3642C;
-}
-
 /* Tabla de Puntuaciones */
 /* Tabla de Puntuaciones */
 .tabla {
@@ -86,6 +88,15 @@ Color Texto: #FFFFFF
 .tabla .table-cell {
     -fx-text-fill: white;
     -fx-alignment: CENTER;
+}
+
+.table-view .scroll-bar * {
+    -fx-min-width: 0;
+    -fx-pref-width: 0;
+    -fx-max-width: 0;
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
 }
 
 

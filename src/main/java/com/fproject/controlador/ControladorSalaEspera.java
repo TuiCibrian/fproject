@@ -118,6 +118,7 @@ public class ControladorSalaEspera {
         alertaBusqueda.setContentText("Buscando Rival...");
         ProgressIndicator progressIndicator = new ProgressIndicator();
         progressIndicator.setPrefSize(40, 40);
+        progressIndicator.setStyle("-fx-progress-color: #F3642C;");
         alertaBusqueda.setGraphic(progressIndicator);
         alertaBusqueda.getButtonTypes().setAll(ButtonType.CANCEL);
 

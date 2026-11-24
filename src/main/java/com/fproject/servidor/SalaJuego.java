@@ -125,6 +125,7 @@ public class SalaJuego {
         //mediante instrospeccion
         String texto = objeto.getClass().getSimpleName() + ":";
         try {
+            //recorre las propiedades y consigue sus nombres, con estos datos ya usa sus getters para imprimir en pantalla
             for (PropertyDescriptor p : Introspector.getBeanInfo(objeto.getClass(), Object.class).getPropertyDescriptors()) {
                 texto += " " + p.getName() + "=" + p.getReadMethod().invoke(objeto);
             }
