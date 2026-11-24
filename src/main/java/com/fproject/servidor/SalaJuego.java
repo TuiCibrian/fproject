@@ -1,5 +1,7 @@
 package com.fproject.servidor;
 
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.util.Date;
 
 import com.fproject.datos.ManejadorDB4O;
@@ -73,18 +75,20 @@ public class SalaJuego {
     private void resolverRonda() {
         Carta cartaJugador1 = estado.getManoJugador1().get(indiceCartaJugador1);
         Carta cartaJugador2 = estado.getManoJugador2().get(indiceCartaJugador2);
+
+        System.out.println("Ronda: " + inspeccionar(cartaJugador1) + " vs " + inspeccionar(cartaJugador2));
+
         int resultado = reglas.resolverRonda(cartaJugador1, cartaJugador2);
-        String textoResultado = nombre(jugador1) + " jugó " + describirCarta(cartaJugador1)
-                + ". " + nombre(jugador2) + " jugó " + describirCarta(cartaJugador2) + ". ";
+        String textoResultado = "";
 
         if (resultado == ReglasJuego.JUGADOR1) {
             estado.getCartasGanadasJugador1().add(cartaJugador1);
-            textoResultado += nombre(jugador1) + " ganó la ronda.";
+            textoResultado += nombre(jugador1) + " Ganó La Ronda.";
         } else if (resultado == ReglasJuego.JUGADOR2) {
             estado.getCartasGanadasJugador2().add(cartaJugador2);
-            textoResultado += nombre(jugador2) + " ganó la ronda.";
+            textoResultado += nombre(jugador2) + " Ganó La Ronda.";
         } else {
-            textoResultado += "La ronda terminó en empate.";
+            textoResultado += "La Ronda Terminó En Empate.";
         }
 
         estado.getManoJugador1().remove(indiceCartaJugador1);
@@ -104,6 +108,9 @@ public class SalaJuego {
         reglas.reponerCarta(estado.getManoJugador1(), estado.getMazo());
         reglas.reponerCarta(estado.getManoJugador2(), estado.getMazo());
 
+        estado.setUltimaCartaJugador1(cartaJugador1);
+        estado.setUltimaCartaJugador2(cartaJugador2);
+
         if (estado.getMazo().isEmpty()
                 && estado.getManoJugador1().isEmpty()
                 && estado.getManoJugador2().isEmpty()) {
@@ -112,6 +119,19 @@ public class SalaJuego {
         }
 
         enviarEstado(Mensaje.aviso.ESTADO_JUEGO, textoResultado);
+    }
+
+    private String inspeccionar(Object objeto) { //clase para inspeccionar cartas e imprimir sus datos en la temrinal
+        //mediante instrospeccion
+        String texto = objeto.getClass().getSimpleName() + ":";
+        try {
+            for (PropertyDescriptor p : Introspector.getBeanInfo(objeto.getClass(), Object.class).getPropertyDescriptors()) {
+                texto += " " + p.getName() + "=" + p.getReadMethod().invoke(objeto);
+            }
+        } catch (Exception e) {
+            texto += " no se pudo inspeccionar";
+        }
+        return texto;
     }
 
     private void terminarPartida(String ganador, String resultado) {
@@ -197,6 +217,7 @@ public class SalaJuego {
     private void enviarEstado(Mensaje.aviso aviso, String texto) {
         jugador1.enviar(crearMensaje(jugador1, aviso, texto));
         jugador2.enviar(crearMensaje(jugador2, aviso, texto));
+
     }
 
     //cada jugador recibe solo su mano; en la vista, jugador1 siempre es quien recibe el mensaje
@@ -207,10 +228,14 @@ public class SalaJuego {
             vista.setManoJugador1(estado.getManoJugador1());
             vista.setCartasGanadasJugador1(estado.getCartasGanadasJugador1());
             vista.setCartasGanadasJugador2(estado.getCartasGanadasJugador2());
+            vista.setUltimaCartaJugador1(estado.getUltimaCartaJugador1());
+            vista.setUltimaCartaJugador2(estado.getUltimaCartaJugador2());
         } else {
             vista.setManoJugador1(estado.getManoJugador2());
             vista.setCartasGanadasJugador1(estado.getCartasGanadasJugador2());
             vista.setCartasGanadasJugador2(estado.getCartasGanadasJugador1());
+            vista.setUltimaCartaJugador1(estado.getUltimaCartaJugador2());
+            vista.setUltimaCartaJugador2(estado.getUltimaCartaJugador1());
         }
         vista.setGanador(estado.getGanador());
 

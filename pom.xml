@@ -38,6 +38,11 @@
             <version>${javafx.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.db4o</groupId>
             <artifactId>db4o-all</artifactId>
             <version>${db4o.version}</version>

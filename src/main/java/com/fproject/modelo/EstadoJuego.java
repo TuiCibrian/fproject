@@ -12,6 +12,8 @@ public class EstadoJuego implements Serializable {
     private ArrayList<Carta> cartasGanadasJugador1;
     private ArrayList<Carta> cartasGanadasJugador2;
     private String ganador;
+    private Carta ultimaCartaJugador1;
+    private Carta ultimaCartaJugador2;
 
     public EstadoJuego() {
         mazo = new ArrayList<>();
@@ -67,5 +69,21 @@ public class EstadoJuego implements Serializable {
 
     public void setGanador(String ganador) {
         this.ganador = ganador;
+    }
+
+    public Carta getUltimaCartaJugador1() {
+        return ultimaCartaJugador1;
+    }
+
+    public void setUltimaCartaJugador1(Carta ultimaCartaJugador1) {
+        this.ultimaCartaJugador1 = ultimaCartaJugador1;
+    }
+
+    public Carta getUltimaCartaJugador2() {
+        return ultimaCartaJugador2;
+    }
+
+    public void setUltimaCartaJugador2(Carta ultimaCartaJugador2) {
+        this.ultimaCartaJugador2 = ultimaCartaJugador2;
     }
 }

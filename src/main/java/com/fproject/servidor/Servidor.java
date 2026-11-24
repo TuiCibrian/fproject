@@ -179,6 +179,10 @@ public class Servidor {
 
                     //si paso validaciones enviamos un mensaje de exito
                     this.jugadorAutenticado = jugador;
+                    if (jugador.getPeleador() == null) {
+                        jugador.setPeleador("Box");
+                        db.guardarJugador(jugador);
+                    }
                     this.enviar(new Mensaje(Mensaje.aviso.LOGIN_OK, "Inicio de Sesión Existoso", perfilPublico(jugador)));
                     System.out.println("Usuario Conectado :"+this.jugadorAutenticado.getNombreUsuario());
                     return;
@@ -261,7 +265,7 @@ public class Servidor {
                     }
                     this.getJugador().setPeleador(msg.getMensaje());
                     db.guardarJugador(this.getJugador());
-                    this.enviar(new Mensaje(Mensaje.aviso.CAMBIAR_OK,this.getJugador()));
+                    this.enviar(new Mensaje(Mensaje.aviso.CAMBIAR_OK, perfilPublico(this.getJugador())));
                     return;
                 }
                 default:

@@ -1,30 +1,26 @@
 package com.fproject.datos;
+
 import com.fproject.Main;
 import com.fproject.modelo.JugadorPerfil;
 import javafx.event.Event;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 
-/*
-Utilidades Generales
-- Cambiar de Ventana
- */
 public class General {
 
-    //jugador que inició sesión
     private static JugadorPerfil jugadorActual;
-
-    //rival de la partida en línea actual
     private static JugadorPerfil rivalActual;
+    private static MediaPlayer bgmPlayer;
 
-    public General(){
-
+    public General() {
     }
 
     public static JugadorPerfil getJugadorActual() {
@@ -43,19 +39,16 @@ public class General {
         rivalActual = rival;
     }
 
-    public static void Cambiar(Event evento, String nombre){
+    public static void Cambiar(Event evento, String nombre) {
         Cambiar((Node) evento.getSource(), nombre);
     }
 
-    //para cambiar de ventana cuando no hay evento, por ejemplo al recibir un mensaje del servidor
-    public static void Cambiar(Node nodo, String nombre){
-        try{
-            Parent ruta = FXMLLoader.load(Main.class.getResource(nombre+".fxml"));
+    public static void Cambiar(Node nodo, String nombre) {
+        try {
+            Parent ruta = FXMLLoader.load(Main.class.getResource(nombre + ".fxml"));
             Stage stage = (Stage) nodo.getScene().getWindow();
-
             stage.getScene().setRoot(ruta);
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -66,5 +59,26 @@ public class General {
         alerta.setHeaderText(null);
         alerta.setContentText(mensaje);
         alerta.showAndWait();
+    }
+
+    public static void reproducirMusica(String nombre) {
+        detenerMusica();
+        Media bgm = new Media(General.class.getResource("/com/fproject/audio/" + nombre + ".wav").toExternalForm());
+        bgmPlayer = new MediaPlayer(bgm);
+        bgmPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        bgmPlayer.play();
+    }
+
+    public static void detenerMusica() {
+        if (bgmPlayer != null) {
+            bgmPlayer.stop();
+            bgmPlayer.dispose();
+            bgmPlayer = null;
+        }
+    }
+
+    public static void reproducirEfecto(String nombre) {
+        AudioClip sfx = new AudioClip(General.class.getResource("/com/fproject/audio/" + nombre + ".wav").toExternalForm());
+        sfx.play();
     }
 }

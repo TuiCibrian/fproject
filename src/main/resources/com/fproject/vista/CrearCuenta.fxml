@@ -11,8 +11,13 @@
 
 <VBox alignment="CENTER" maxHeight="Infinity" maxWidth="Infinity" minHeight="-Infinity" minWidth="-Infinity" style="-fx-background-color: #261B17;" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.fproject.controlador.CrearCuentaControlador">
    <children>
-      <VBox alignment="CENTER" maxWidth="500.0" style="-fx-background-color: #392E2A; -fx-background-radius: 15;">
+      <VBox alignment="CENTER" maxWidth="500.0" style="-fx-background-color: #392E2A; -fx-background-radius: 15;" spacing="10.0">
          <children>
+            <Label style="-fx-text-fill: white;" text="MONKEY FIGHTERS">
+               <font>
+                  <Font name="Arial Bold" size="24.0" />
+               </font>
+            </Label>
             <Label style="-fx-text-fill: white;" text="Crear Cuenta">
                <font>
                   <Font name="Arial Bold" size="24.0" />
